@@ -7,7 +7,7 @@ This is an extension for [stable-diffusion-webui](https://github.com/AUTOMATIC11
 ## How to use?
 
 1. install this ext
-2. add, move and remove points in the graph in expandable `TimeMachine` section
+2. add (click), move (drag) and remove (right-click) points in the graph in expandable `TimeMachine` section
 3. generate images
 
 ![](./images/readme.png)
