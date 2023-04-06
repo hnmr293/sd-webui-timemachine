@@ -1,7 +1,7 @@
 import os
 import json
 import math
-from typing import Union, List, Callable
+from typing import Union, List, Callable, Optional
 
 import torch
 import gradio as gr
@@ -11,16 +11,16 @@ from modules import scripts
 from modules.sd_samplers_kdiffusion import KDiffusionSampler
 from modules import extensions
 
+from scripts.timemachinelib import sampler
 from scripts.timemachinelib.xyz import init_xyz
 
 NAME = 'TimeMachine'
 
 class Script(scripts.Script):
     
-    def __init__(self):
-        super().__init__()
-        self.org_get_sigmas = KDiffusionSampler.get_sigmas
-
+    def __init__(self) -> None:
+        self.last_sampler_name: Optional[str] = None
+    
     def title(self):
         return NAME
     
@@ -49,14 +49,15 @@ class Script(scripts.Script):
         
         return [enabled, tm]
     
-    def process(
+    def process_batch(
         self,
         p: StableDiffusionProcessing,
         enabled: bool,
         tm: str,
+        **kwargs
     ):
         if not enabled:
-            KDiffusionSampler.get_sigmas = self.org_get_sigmas
+            #KDiffusionSampler.get_sigmas = self.org_get_sigmas
             return
         
         vs = { v['x']: v['y'] for v in json.loads(tm) }
@@ -80,24 +81,25 @@ class Script(scripts.Script):
         
         assert len(steps) == p.steps, f'len(steps)={len(steps)}, p.steps={p.steps}'
         
-        def get_sigmas(*args, **kwargs):
-            nonlocal steps
-            
-            sigmas = self.org_get_sigmas(*args, **kwargs)
-            assert len(sigmas.shape) == 1
-            
-            if sigmas.shape[0] == p.steps + 1:
-                steps += [p.steps+1]
-            indices = torch.LongTensor(steps) - 1
-            
-            return sigmas.gather(0, indices.to(sigmas.device))
-
-        KDiffusionSampler.get_sigmas = get_sigmas
+        p.steps = max(steps)
+        
+        s = sampler.get_sampler('DPM++ 2M Karras TM')
+        assert s is not None, 'DPM++ 2M Karras TM is not found.'
+        
+        s.func.steps = steps # type: ignore
+        
+        if p.sampler_name != 'DPM++ 2M Karras TM':
+            self.last_sampler_name = p.sampler_name
+        p.sampler_name = 'DPM++ 2M Karras TM'
         
         p.extra_generation_params.update({
             f'{NAME} Enabled': enabled,
             f'{NAME} Steps': steps,
         })
+    
+    def postprocess_batch(self, p, *args, **kwargs):
+        if self.last_sampler_name is not None:
+            p.sampler_name = self.last_sampler_name
 
 
 def get_self_extension():
@@ -121,3 +123,12 @@ def js2py(
 
 
 init_xyz(Script, NAME)
+
+# register new sampler
+sampler.add_sampler('DPM++ 2M Karras TM', 'sample_dpmpp_2m_tm', 'sample_dpmpp_2m', sampler.DPM_PP_2M_TM(), ['k_dpmpp_2m_tm'], {'scheduler': 'karras'})
+sampler.update_samplers()
+
+
+# hook Sampler textbox creation
+from modules import ui
+ui.create_sampler_and_steps_selection = sampler.hook(ui.create_sampler_and_steps_selection)
