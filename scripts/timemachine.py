@@ -120,4 +120,4 @@ def js2py(
     return v
 
 
-init_xyz(Script)
+init_xyz(Script, NAME)
