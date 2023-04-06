@@ -7,7 +7,7 @@ from torch import nn, Tensor
 from einops import rearrange
 from modules.processing import StableDiffusionProcessing
 
-from scripts.sdhook import SDHook
+from scripts.timemachinelib.sdhook import SDHook
 
 
 class Hooker(SDHook):

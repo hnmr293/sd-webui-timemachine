@@ -11,7 +11,7 @@ from modules import scripts
 from modules.sd_samplers_kdiffusion import KDiffusionSampler
 from modules import extensions
 
-from scripts.xyz import init_xyz
+from scripts.timemachinelib.xyz import init_xyz
 
 NAME = 'TimeMachine'
 
