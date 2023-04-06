@@ -1,5 +1,7 @@
 # TimeMachine - steps rearrangement for stable diffusion
 
+![cover](./images/tm_result.png)
+
 ## What is this?
 
 This is an extension for [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) which rearranges `timestep` parameter.
@@ -12,8 +14,5 @@ This is an extension for [stable-diffusion-webui](https://github.com/AUTOMATIC11
 
 ![](./images/readme.png)
 
-## FAQ
-
-- Q. NansException has occured.
-- Q. Only black images have been generated.
-- A. You are going to sinking into the darkness of history. Goodbye.
+left click: put a point
+right click: remove a point
