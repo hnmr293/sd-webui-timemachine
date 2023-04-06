@@ -14,5 +14,7 @@ This is an extension for [stable-diffusion-webui](https://github.com/AUTOMATIC11
 
 ![](./images/readme.png)
 
+```
 left click: put a point
 right click: remove a point
+```
