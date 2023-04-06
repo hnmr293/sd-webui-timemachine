@@ -15,20 +15,20 @@
 
     function load_modules(lib) {
         return new Promise(resolve => {
-            onUiUpdate(() => {
+            function load() {
 
                 if (lib.module_loaded) {
-                    return;
+                    return true;
                 }
                 
                 const app = gradioApp();
                 if (!app || app === document) {
-                    return;
+                    return false;
                 }
 
                 const jscont = app.querySelector('#' + lib.id('js_modules'));
                 if (!jscont) {
-                    return;
+                    return false;
                 }
 
                 const [base_path, ...scripts] = jscont.textContent.trim().split('\n').map(x => x.trim());
@@ -53,7 +53,19 @@
                 lib.import = import_;
                 lib.module_loaded = true;
                 resolve();
-            });
+                return true;
+            }
+
+            function call_load() {
+                const result = load();
+                if (result) {
+                    console.log(`[${NAME}] scripts loaded`);
+                } else {
+                    setTimeout(call_load, 500);
+                }
+            }
+
+            call_load();
         });
     }
 
@@ -63,9 +75,41 @@
         main2(name, lib, 'img2img');
     }
 
-    function main2(name, lib, mode) {
-        const id = s => lib.id(mode, s);
+    async function main2(name, lib, mode) {
+        const get_acc = new Promise(resolve => {
+            (function try_get_acc() {
+                const acc = gradioApp().querySelector('#' + lib.id(mode, 'accordion'));
+                if (acc) {
+                    resolve(acc);
+                } else {
+                    setTimeout(try_get_acc, 500);
+                }
+            })();
+        });
 
+        const acc = await get_acc;
+
+        const observer = new MutationObserver((list, observer) => {
+            for (let mut of list) {
+                if (mut.type === 'childList') {
+                    if (mut.addedNodes.length != 0) {
+                        // closed -> opened
+                        main3(name, lib, mode);
+                    } else {
+                        // opened -> closed
+                        // do nothing
+                    }
+                }
+            }
+        });
+        
+        observer.observe(acc, { childList: true, attributes: false, subtree: false });
+}
+
+    function main3(name, lib, mode) {
+        const id = s => lib.id(mode, s);
+        const $ = x => Array.from(gradioApp().querySelectorAll(x)).at(-1);
+        
         const enabled = gradioApp().querySelector(`#${id('enabled')} input[type=checkbox]`);
         const generate_button = gradioApp().querySelector(`#${mode}_generate`);
         const step_ele = gradioApp().querySelector(`#${mode}_steps input[type=number]`);
@@ -85,7 +129,7 @@
             plugins: plugins,
         });
 
-        gradioApp().querySelector('#' + id('container')).appendChild(canvas);
+        $('#' + id('container')).appendChild(canvas);
         updateSteps(chart, +step_ele.value);
         
         step_ele.addEventListener('input', () => updateSteps(chart, +step_ele.value));

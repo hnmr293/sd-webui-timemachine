@@ -39,7 +39,7 @@ class Script(scripts.Script):
         id = lambda x: f'{NAME.lower()}-{mode}-{x}'
         js = lambda s: f'globalThis["{id(s)}"]'
         
-        with gr.Accordion(NAME, open=False):
+        with gr.Accordion(NAME, open=False, elem_id=id('accordion')):
             enabled = gr.Checkbox(label='Enabled', value=False, elem_id=id('enabled'))
             gr.HTML(elem_id=id('container'))
             
